@@ -1,0 +1,152 @@
+[
+  {
+    "jobMatchScoreId": 101,
+    "score": 92,
+    "reasons": {
+      "matchedSkills": ["TypeScript", "NestJS", "PostgreSQL", "Docker"],
+      "missingSkills": [],
+      "seniorityMatch": true,
+      "locationMatch": true,
+      "summary": "Excellent match — candidate's TypeScript/NestJS/PostgreSQL/Docker stack aligns perfectly. Fully remote role suits candidate's preferences. Experience level matches Mid-Senior expectation."
+    },
+    "scorer": { "type": "algorithm", "provider": "internal", "model": "algo-v1", "version": "1" },
+    "createdAt": "2026-04-11T08:00:00.000Z",
+    "job": {
+      "jobDescriptionId": 1,
+      "title": "Senior Backend Engineer (Node.js / NestJS)",
+      "publishedAt": "2026-04-10",
+      "jobUrl": "https://linkedin.com/jobs/view/1001",
+      "applyUrl": "https://linkedin.com/jobs/view/1001/apply",
+      "salary": "€80,000 – €110,000",
+      "applicationsCount": "34 applicants",
+      "postedTime": "5 days ago",
+      "company": { "companyId": 1, "companyName": "TechCorp GmbH" },
+      "location": { "locationId": 3, "countryName": "Germany" },
+      "sector": { "sectorId": 1, "sectorName": "Technology, Information and Internet" },
+      "speciality": { "specialityId": 1, "specialityName": "Engineering" },
+      "experienceLevel": { "experienceLevelId": 2, "experienceLevelName": "Mid-Senior level" },
+      "contractType": { "contractTypeId": 1, "contractTypeName": "Full-time" },
+      "applyType": { "applyTypeId": 1, "applyTypeName": "EASY_APPLY" }
+    }
+  },
+  {
+    "jobMatchScoreId": 102,
+    "score": 75,
+    "reasons": {
+      "matchedSkills": ["TypeScript", "React", "Node.js", "PostgreSQL"],
+      "missingSkills": ["NestJS"],
+      "seniorityMatch": true,
+      "locationMatch": true,
+      "summary": "Strong match on core full-stack skills. NestJS listed as nice-to-have (candidate has it). Fully remote role. Minor deduction for React being secondary requirement."
+    },
+    "scorer": { "type": "algorithm", "provider": "internal", "model": "algo-v1", "version": "1" },
+    "createdAt": "2026-04-13T09:00:00.000Z",
+    "job": {
+      "jobDescriptionId": 3,
+      "title": "Senior Full-Stack Engineer (TypeScript / React)",
+      "publishedAt": "2026-04-12",
+      "jobUrl": "https://linkedin.com/jobs/view/1003",
+      "applyUrl": "https://linkedin.com/jobs/view/1003/apply",
+      "salary": "€70,000 – €95,000",
+      "applicationsCount": "56 applicants",
+      "postedTime": "3 days ago",
+      "company": { "companyId": 4, "companyName": "CloudNine BV" },
+      "location": null,
+      "sector": { "sectorId": 2, "sectorName": "Financial Services" },
+      "speciality": { "specialityId": 1, "specialityName": "Engineering" },
+      "experienceLevel": { "experienceLevelId": 2, "experienceLevelName": "Mid-Senior level" },
+      "contractType": { "contractTypeId": 1, "contractTypeName": "Full-time" },
+      "applyType": { "applyTypeId": 1, "applyTypeName": "EASY_APPLY" }
+    }
+  },
+  {
+    "jobMatchScoreId": 103,
+    "score": 88,
+    "reasons": {
+      "matchedSkills": ["AWS", "Kubernetes", "Docker", "CI/CD"],
+      "missingSkills": ["Terraform"],
+      "seniorityMatch": true,
+      "locationMatch": true,
+      "summary": "Very strong match on cloud/DevOps skills. Candidate has 5+ years Kubernetes/AWS. Remote-eligible. Terraform is nice-to-have and candidate can learn quickly."
+    },
+    "scorer": { "type": "algorithm", "provider": "internal", "model": "algo-v1", "version": "1" },
+    "createdAt": "2026-04-06T11:00:00.000Z",
+    "job": {
+      "jobDescriptionId": 4,
+      "title": "Backend Engineer – Cloud Platform (AWS / Kubernetes)",
+      "publishedAt": "2026-04-05",
+      "jobUrl": "https://linkedin.com/jobs/view/1004",
+      "applyUrl": "https://linkedin.com/jobs/view/1004/apply",
+      "salary": "SEK 700,000 – 900,000/year",
+      "applicationsCount": "22 applicants",
+      "postedTime": "10 days ago",
+      "company": { "companyId": 5, "companyName": "Nordic Labs" },
+      "location": { "locationId": 5, "countryName": "Sweden" },
+      "sector": { "sectorId": 1, "sectorName": "Technology, Information and Internet" },
+      "speciality": { "specialityId": 1, "specialityName": "Engineering" },
+      "experienceLevel": { "experienceLevelId": 2, "experienceLevelName": "Mid-Senior level" },
+      "contractType": { "contractTypeId": 1, "contractTypeName": "Full-time" },
+      "applyType": { "applyTypeId": 2, "applyTypeName": "EXTERNAL" }
+    }
+  },
+  {
+    "jobMatchScoreId": 104,
+    "score": 82,
+    "reasons": {
+      "matchedSkills": ["Node.js", "RabbitMQ", "Redis", "NestJS"],
+      "missingSkills": ["Temporal"],
+      "seniorityMatch": false,
+      "locationMatch": true,
+      "summary": "Good match on event-driven backend stack. Seniority deducted slightly — role asks for Lead/Principal. Candidate is Senior but has strong leadership experience. Temporal is nice-to-have and candidate has it."
+    },
+    "scorer": { "type": "algorithm", "provider": "internal", "model": "algo-v1", "version": "1" },
+    "createdAt": "2026-04-02T14:00:00.000Z",
+    "job": {
+      "jobDescriptionId": 5,
+      "title": "Lead Backend Engineer – Event-Driven Architecture",
+      "publishedAt": "2026-04-01",
+      "jobUrl": "https://linkedin.com/jobs/view/1005",
+      "applyUrl": "https://linkedin.com/jobs/view/1005/apply",
+      "salary": "€90,000 – €120,000",
+      "applicationsCount": "18 applicants",
+      "postedTime": "2 weeks ago",
+      "company": { "companyId": 2, "companyName": "Accenture" },
+      "location": { "locationId": 6, "countryName": "France" },
+      "sector": { "sectorId": 4, "sectorName": "Consulting" },
+      "speciality": { "specialityId": 1, "specialityName": "Engineering" },
+      "experienceLevel": { "experienceLevelId": 2, "experienceLevelName": "Mid-Senior level" },
+      "contractType": { "contractTypeId": 1, "contractTypeName": "Full-time" },
+      "applyType": { "applyTypeId": 1, "applyTypeName": "EASY_APPLY" }
+    }
+  },
+  {
+    "jobMatchScoreId": 105,
+    "score": 20,
+    "reasons": {
+      "matchedSkills": [],
+      "missingSkills": ["Go", "Apache Kafka"],
+      "seniorityMatch": false,
+      "locationMatch": false,
+      "summary": "Low match — role requires Go and Kafka expertise at Staff level. Candidate has intermediate Go but no Kafka experience. Role is on-site in Netherlands."
+    },
+    "scorer": { "type": "algorithm", "provider": "internal", "model": "algo-v1", "version": "1" },
+    "createdAt": "2026-04-09T08:30:00.000Z",
+    "job": {
+      "jobDescriptionId": 2,
+      "title": "Staff Software Engineer – Distributed Systems",
+      "publishedAt": "2026-04-08",
+      "jobUrl": "https://linkedin.com/jobs/view/1002",
+      "applyUrl": "https://linkedin.com/jobs/view/1002/apply",
+      "salary": null,
+      "applicationsCount": "107 applicants",
+      "postedTime": "1 week ago",
+      "company": { "companyId": 3, "companyName": "DataStream AG" },
+      "location": { "locationId": 2, "countryName": "Netherlands" },
+      "sector": { "sectorId": 1, "sectorName": "Technology, Information and Internet" },
+      "speciality": { "specialityId": 2, "specialityName": "Research" },
+      "experienceLevel": { "experienceLevelId": 3, "experienceLevelName": "Director" },
+      "contractType": { "contractTypeId": 1, "contractTypeName": "Full-time" },
+      "applyType": { "applyTypeId": 2, "applyTypeName": "EXTERNAL" }
+    }
+  }
+]
