@@ -1,13 +1,18 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { listJobs, type JobFilters } from '@/lib/api/jobs'
 import JobFiltersPanel from '@/components/jobs/JobFilters'
+import GetNewJobsForm from '@/components/jobs/GetNewJobsForm'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, ExternalLink, MapPin, Building2, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
 import type { JobListItem } from '@/lib/schemas'
+
+const TABS = ['Jobs', 'Get New Jobs'] as const
+type Tab = typeof TABS[number]
 
 const PAGE_SIZE = 20
 
@@ -39,6 +44,7 @@ function filtersToParams(f: JobFilters): URLSearchParams {
 export default function JobsListPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const [activeTab, setActiveTab] = useState<Tab>('Jobs')
   const filters = filtersFromParams(searchParams)
 
   function setFilters(f: JobFilters) {
@@ -48,6 +54,7 @@ export default function JobsListPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['jobs', filters],
     queryFn: () => listJobs(filters),
+    enabled: activeTab === 'Jobs',
   })
 
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 1
@@ -56,62 +63,88 @@ export default function JobsListPage() {
     <div className="p-6 space-y-5">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {data ? `${data.total} job${data.total !== 1 ? 's' : ''} found` : 'Loading…'}
-        </p>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <JobFiltersPanel filters={filters} onChange={setFilters} />
-      </div>
-
-      {isLoading && (
-        <div className="text-center py-12 text-gray-400">Loading jobs…</div>
-      )}
-
-      {isError && (
-        <div className="text-center py-12 text-red-500">Failed to load jobs.</div>
-      )}
-
-      {data && (
-        <>
-          <div className="space-y-3">
-            {data.items.length === 0 && (
-              <div className="text-center py-12 text-gray-400">No jobs match your filters.</div>
+      <div className="flex border-b border-gray-200">
+        {TABS.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
+              activeTab === tab
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             )}
-            {data.items.map(job => (
-              <JobRow key={job.jobDescriptionId} job={job} onClick={() => navigate(`/jobs/${job.jobDescriptionId}`)} />
-            ))}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'Jobs' && (
+        <>
+          <p className="text-sm text-gray-500">
+            {data ? `${data.total} job${data.total !== 1 ? 's' : ''} found` : 'Loading…'}
+          </p>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <JobFiltersPanel filters={filters} onChange={setFilters} />
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2">
-              <p className="text-sm text-gray-500">
-                Page {filters.page ?? 1} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={(filters.page ?? 1) <= 1}
-                  onClick={() => setFilters({ ...filters, page: (filters.page ?? 1) - 1 })}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={(filters.page ?? 1) >= totalPages}
-                  onClick={() => setFilters({ ...filters, page: (filters.page ?? 1) + 1 })}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+          {isLoading && (
+            <div className="text-center py-12 text-gray-400">Loading jobs…</div>
+          )}
+
+          {isError && (
+            <div className="text-center py-12 text-red-500">Failed to load jobs.</div>
+          )}
+
+          {data && (
+            <>
+              <div className="space-y-3">
+                {data.items.length === 0 && (
+                  <div className="text-center py-12 text-gray-400">No jobs match your filters.</div>
+                )}
+                {data.items.map(job => (
+                  <JobRow key={job.jobDescriptionId} job={job} onClick={() => navigate(`/jobs/${job.jobDescriptionId}`)} />
+                ))}
               </div>
-            </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-sm text-gray-500">
+                    Page {filters.page ?? 1} of {totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={(filters.page ?? 1) <= 1}
+                      onClick={() => setFilters({ ...filters, page: (filters.page ?? 1) - 1 })}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={(filters.page ?? 1) >= totalPages}
+                      onClick={() => setFilters({ ...filters, page: (filters.page ?? 1) + 1 })}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
+      )}
+
+      {activeTab === 'Get New Jobs' && (
+        <GetNewJobsForm />
       )}
     </div>
   )

@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -15,25 +16,16 @@ const queryClient = new QueryClient({
   },
 })
 
-async function prepare() {
-  if (import.meta.env.VITE_USE_MOCK_API === 'true') {
-    const { worker } = await import('./mocks/browser')
-    return worker.start({ onUnhandledRequest: 'bypass' })
-  }
-}
-
 setUnauthorizedHandler(() => {
   window.location.href = '/login'
 })
 
-prepare().then(() => {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <BrowserRouter>
-        <QueryClientProvider client={queryClient}>
-          <AppRoutes />
-        </QueryClientProvider>
-      </BrowserRouter>
-    </StrictMode>,
-  )
-})
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AppRoutes />
+      </QueryClientProvider>
+    </BrowserRouter>
+  </StrictMode>,
+)

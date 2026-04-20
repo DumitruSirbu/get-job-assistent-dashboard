@@ -36,7 +36,7 @@ async function request<T>(
 ): Promise<T> {
   const accessToken = tokenStore.getAccess()
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers as Record<string, string> | undefined),
   }
   if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
@@ -56,9 +56,16 @@ async function request<T>(
     throw new Error(`API error ${res.status}: ${body}`)
   }
 
-  if (res.status === 204) return undefined as T
+  const text = await res.text()
+  if (!text) return undefined as T
 
-  const json = await res.json()
+  let json: unknown
+  try {
+    json = JSON.parse(text)
+  } catch {
+    throw new Error(`Invalid JSON response from ${path}: ${text.slice(0, 100)}`)
+  }
+
   const result = schema.safeParse(json)
   if (!result.success) {
     console.error(
@@ -76,6 +83,9 @@ export const apiClient = {
 
   post: <T>(path: string, body: unknown, schema: z.ZodType<T>) =>
     request(path, { method: 'POST', body: JSON.stringify(body) }, schema),
+
+  put: <T>(path: string, body: unknown, schema: z.ZodType<T>) =>
+    request(path, { method: 'PUT', body: JSON.stringify(body) }, schema),
 
   patch: <T>(path: string, body: unknown, schema: z.ZodType<T>) =>
     request(path, { method: 'PATCH', body: JSON.stringify(body) }, schema),

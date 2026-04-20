@@ -2,6 +2,7 @@ import { memo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { listScoredJobsForCandidate, type ScoreFilters } from '@/lib/api/scores'
 import { getApplicationsForCandidate, createApplication, deleteApplication, updateApplication } from '@/lib/api/applications'
+import { getApplicationStatuses } from '@/lib/api/lookups'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -11,8 +12,6 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-
-const APPLICATION_STATUSES = ['applied', 'withdrawn', 'interview', 'offer', 'rejected'] as const
 
 const STATUS_STYLES: Record<string, string> = {
   applied:   'text-blue-600',
@@ -33,8 +32,6 @@ export default function ScoredJobsTable({ candidateId }: Props) {
   const [filters, setFilters] = useState<ScoreFilters>({ sort: 'score:desc', limit: PAGE_SIZE })
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [showAppliedOnly, setShowAppliedOnly] = useState(false)
-  const [scoredFrom, setScoredFrom] = useState('')
-  const [scoredTo, setScoredTo] = useState('')
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['scores', candidateId, filters],
@@ -46,6 +43,13 @@ export default function ScoredJobsTable({ candidateId }: Props) {
     queryKey: ['applications', candidateId],
     queryFn: () => getApplicationsForCandidate(candidateId),
   })
+
+  const { data: statusList } = useQuery({
+    queryKey: ['application-statuses'],
+    queryFn: getApplicationStatuses,
+    staleTime: Infinity,
+  })
+  const statuses = statusList?.items ?? []
 
   const applyMutation = useMutation({
     mutationFn: (jobId: number) => createApplication(candidateId, jobId),
@@ -151,8 +155,8 @@ export default function ScoredJobsTable({ candidateId }: Props) {
           <label className="text-xs text-gray-500 whitespace-nowrap">Scored from</label>
           <Input
             type="date"
-            value={scoredFrom}
-            onChange={e => setScoredFrom(e.target.value)}
+            value={filters.scoredFrom ?? ''}
+            onChange={e => setFilters(f => ({ ...f, scoredFrom: e.target.value || undefined, page: 1 }))}
             className="w-40"
           />
         </div>
@@ -161,8 +165,8 @@ export default function ScoredJobsTable({ candidateId }: Props) {
           <label className="text-xs text-gray-500 whitespace-nowrap">to</label>
           <Input
             type="date"
-            value={scoredTo}
-            onChange={e => setScoredTo(e.target.value)}
+            value={filters.scoredTo ?? ''}
+            onChange={e => setFilters(f => ({ ...f, scoredTo: e.target.value || undefined, page: 1 }))}
             className="w-40"
           />
         </div>
@@ -185,8 +189,6 @@ export default function ScoredJobsTable({ candidateId }: Props) {
         {data?.items
           .filter(item => item.job != null)
           .filter(item => !showAppliedOnly || getApplication(item.job!.jobDescriptionId) != null)
-          .filter(item => !scoredFrom || item.createdAt.slice(0, 10) >= scoredFrom)
-          .filter(item => !scoredTo || item.createdAt.slice(0, 10) <= scoredTo)
           .map(item => {
           const job = item.job!
           const isOpen = expanded.has(item.jobMatchScoreId)
@@ -264,9 +266,9 @@ export default function ScoredJobsTable({ candidateId }: Props) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {APPLICATION_STATUSES.map(s => (
-                            <SelectItem key={s} value={s} className="text-xs capitalize">
-                              {s}
+                          {statuses.map(s => (
+                            <SelectItem key={s.applicationStatusId} value={s.statusName} className="text-xs capitalize">
+                              {s.statusName}
                             </SelectItem>
                           ))}
                         </SelectContent>

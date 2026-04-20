@@ -51,6 +51,17 @@ export const LookupListSchema = z.object({
   items: z.array(z.object({ id: z.number(), name: z.string() })),
 })
 
+// ---- Application status ----
+
+export const ApplicationStatusSchema = z.object({
+  applicationStatusId: z.number(),
+  statusName: z.string(),
+})
+
+export const ApplicationStatusListSchema = z.object({
+  items: z.array(ApplicationStatusSchema),
+})
+
 // ---- Job ----
 
 export const JobListItemSchema = z.object({
@@ -121,6 +132,16 @@ export const CandidateDetailSchema = z.object({
 
 export const PaginatedCandidatesSchema = PaginatedSchema(CandidateListItemSchema)
 
+// ---- Companies ----
+
+export const CompanyListItemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  isBlacklisted: z.boolean(),
+})
+
+export const PaginatedCompaniesSchema = PaginatedSchema(CompanyListItemSchema)
+
 // ---- Scores ----
 
 export const ScoreReasonsSchema = z.object({
@@ -170,7 +191,7 @@ export const PaginatedScoredJobsSchema = PaginatedSchema(ScoredJobSchema)
 // ---- Applications ----
 
 export const ApplicationSchema = z.object({
-  applicationId: z.string(),
+  applicationId: z.number(),
   candidateProfileId: z.number(),
   jobDescriptionId: z.number(),
   appliedAt: z.string(),
@@ -180,6 +201,18 @@ export const ApplicationSchema = z.object({
 export const ApplicationsResponseSchema = z.object({
   items: z.array(ApplicationSchema),
 })
+
+export const ProcessNewJobsResponseSchema = z.object({ queued: z.number() })
+
+// ---- Region ----
+
+export const RegionSchema = z.object({
+  jobRegionId: z.number(),
+  name: z.string(),
+  isSelectedByDefault: z.boolean().catch(false),
+}).transform(({ jobRegionId, ...rest }) => ({ id: jobRegionId, ...rest }))
+export const RegionListSchema = z.object({ items: z.array(RegionSchema) })
+export type Region = z.infer<typeof RegionSchema>
 
 // ---- Auth ----
 
@@ -209,7 +242,12 @@ export type Skill = z.infer<typeof SkillSchema>
 export type CandidateListItem = z.infer<typeof CandidateListItemSchema>
 export type CandidateDetail = z.infer<typeof CandidateDetailSchema>
 export type PaginatedCandidates = z.infer<typeof PaginatedCandidatesSchema>
+export type CompanyListItem = z.infer<typeof CompanyListItemSchema>
+export type PaginatedCompanies = z.infer<typeof PaginatedCompaniesSchema>
 export type ScoreReasons = z.infer<typeof ScoreReasonsSchema>
 export type ScoredJob = z.infer<typeof ScoredJobSchema>
 export type PaginatedScoredJobs = z.infer<typeof PaginatedScoredJobsSchema>
 export type Application = z.infer<typeof ApplicationSchema>
+export type ApplicationStatus = z.infer<typeof ApplicationStatusSchema>
+export type ApplicationStatusList = z.infer<typeof ApplicationStatusListSchema>
+export type ProcessNewJobsResponse = z.infer<typeof ProcessNewJobsResponseSchema>

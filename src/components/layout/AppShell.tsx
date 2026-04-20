@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Briefcase, Users, LogOut } from 'lucide-react'
+import { Briefcase, Users, Building2, Settings, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api/auth'
 import { tokenStore } from '@/lib/auth/tokenStore'
@@ -8,6 +8,8 @@ import { useEffect } from 'react'
 const navItems = [
   { to: '/jobs', label: 'Jobs', icon: Briefcase },
   { to: '/candidates', label: 'Candidates', icon: Users },
+  { to: '/companies', label: 'Companies', icon: Building2 },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function AppShell() {

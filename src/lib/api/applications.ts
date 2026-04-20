@@ -18,12 +18,12 @@ export function createApplication(
 
 export function updateApplication(
   candidateProfileId: number,
-  applicationId: string,
+  applicationId: number,
   body: { statusName?: string; appliedAt?: string },
 ) {
   return apiClient.patch(`${base(candidateProfileId)}/${applicationId}`, body, ApplicationSchema)
 }
 
-export function deleteApplication(candidateProfileId: number, applicationId: string) {
+export function deleteApplication(candidateProfileId: number, applicationId: number) {
   return apiClient.delete(`${base(candidateProfileId)}/${applicationId}`)
 }

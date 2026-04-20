@@ -6,6 +6,8 @@ export interface ScoreFilters {
   locationMatch?: boolean
   search?: string
   sort?: 'score:desc' | 'score:asc' | 'publishedAt:desc'
+  scoredFrom?: string
+  scoredTo?: string
   page?: number
   limit?: number
 }
@@ -16,6 +18,8 @@ function buildQuery(filters: ScoreFilters): string {
   if (filters.locationMatch !== undefined) params.set('locationMatch', String(filters.locationMatch))
   if (filters.search) params.set('search', filters.search)
   if (filters.sort) params.set('sort', filters.sort)
+  if (filters.scoredFrom) params.set('scoredFrom', filters.scoredFrom)
+  if (filters.scoredTo) params.set('scoredTo', filters.scoredTo)
   if (filters.page) params.set('page', String(filters.page))
   if (filters.limit) params.set('limit', String(filters.limit))
   const qs = params.toString()
