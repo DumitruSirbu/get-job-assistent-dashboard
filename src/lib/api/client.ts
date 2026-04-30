@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { tokenStore } from '@/lib/auth/tokenStore'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 let _onUnauthorized: (() => void) | null = null
 
@@ -9,7 +9,7 @@ export function setUnauthorizedHandler(handler: () => void) {
   _onUnauthorized = handler
 }
 
-async function refreshTokens(): Promise<boolean> {
+export async function refreshTokens(): Promise<boolean> {
   const refreshToken = tokenStore.getRefresh()
   if (!refreshToken) return false
 

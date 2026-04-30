@@ -1,5 +1,5 @@
 // Access token is kept only in memory (cleared on page close).
-// Refresh token is kept in sessionStorage (survives reloads within the tab).
+// Refresh token is kept in localStorage so it survives new tabs and browser restarts.
 
 const REFRESH_KEY = 'gja_refresh_token'
 
@@ -10,19 +10,19 @@ export const tokenStore = {
   setAccess: (token: string) => { _accessToken = token },
   clearAccess: () => { _accessToken = null },
 
-  getRefresh: () => sessionStorage.getItem(REFRESH_KEY),
-  setRefresh: (token: string) => sessionStorage.setItem(REFRESH_KEY, token),
-  clearRefresh: () => sessionStorage.removeItem(REFRESH_KEY),
+  getRefresh: () => localStorage.getItem(REFRESH_KEY),
+  setRefresh: (token: string) => localStorage.setItem(REFRESH_KEY, token),
+  clearRefresh: () => localStorage.removeItem(REFRESH_KEY),
 
   setTokens: (accessToken: string, refreshToken: string) => {
     _accessToken = accessToken
-    sessionStorage.setItem(REFRESH_KEY, refreshToken)
+    localStorage.setItem(REFRESH_KEY, refreshToken)
   },
 
   clear: () => {
     _accessToken = null
-    sessionStorage.removeItem(REFRESH_KEY)
+    localStorage.removeItem(REFRESH_KEY)
   },
 
-  isAuthenticated: () => _accessToken !== null || sessionStorage.getItem(REFRESH_KEY) !== null,
+  isAuthenticated: () => _accessToken !== null || localStorage.getItem(REFRESH_KEY) !== null,
 }

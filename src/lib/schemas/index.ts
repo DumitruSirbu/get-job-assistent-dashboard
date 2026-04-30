@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { JobScrapingLocationStatusEnum, JobScoringRunStatusEnum } from '@dumitru_sirbu92/get-job-assistant-sdk'
 
 // ---- Shared ----
 
@@ -162,6 +163,7 @@ const ScorerModelSchema = z.object({
 export const ScoredJobSchema = z.object({
   jobMatchScoreId: z.number(),
   score: z.number(),
+  hidden: z.boolean().optional().default(false),
   // real API: reasonsJson / mock: reasons
   reasons: ScoreReasonsSchema.nullable().optional(),
   reasonsJson: ScoreReasonsSchema.nullable().optional(),
@@ -202,7 +204,57 @@ export const ApplicationsResponseSchema = z.object({
   items: z.array(ApplicationSchema),
 })
 
-export const ProcessNewJobsResponseSchema = z.object({ queued: z.number() })
+export const ProcessNewJobsResponseSchema = z.object({
+  runId: z.string(),
+  queued: z.number(),
+  totalLocations: z.number(),
+  locations: z.array(z.string()),
+})
+
+export const JobScrapingRunSnapshotSchema = z.object({
+  runId: z.string(),
+  status: z.enum(['running', 'success', 'fail', 'partial']),
+  locations: z.array(z.string()),
+  locationStates: z.record(
+    z.string(),
+    z.object({
+      status: z.nativeEnum(JobScrapingLocationStatusEnum),
+      foundJobs: z.number().optional(),
+      error: z.string().optional(),
+    })
+  ).optional(),
+  totalLocations: z.number(),
+  completedLocations: z.number(),
+  failedLocations: z.number(),
+  totalFoundJobs: z.number(),
+  startedAt: z.string(),
+  finishedAt: z.string().optional(),
+})
+
+// ---- Job Scoring Run ----
+
+export const StartScoringResponseSchema = z.object({
+  dispatched: z.number(),
+  runId: z.string(),
+})
+
+export const JobScoringItemStateSchema = z.object({
+  jobDescriptionId: z.number(),
+  status: z.enum(['completed', 'failed']),
+  score: z.number().optional(),
+  error: z.string().optional(),
+})
+
+export const JobScoringRunSnapshotSchema = z.object({
+  runId: z.string(),
+  status: z.nativeEnum(JobScoringRunStatusEnum),
+  totalJobs: z.number(),
+  completedItems: z.number(),
+  failedItems: z.number(),
+  startedAt: z.string(),
+  finishedAt: z.string().optional(),
+  items: z.array(JobScoringItemStateSchema).default([]),
+})
 
 // ---- Region ----
 
@@ -251,3 +303,6 @@ export type Application = z.infer<typeof ApplicationSchema>
 export type ApplicationStatus = z.infer<typeof ApplicationStatusSchema>
 export type ApplicationStatusList = z.infer<typeof ApplicationStatusListSchema>
 export type ProcessNewJobsResponse = z.infer<typeof ProcessNewJobsResponseSchema>
+export type JobScrapingRunSnapshot = z.infer<typeof JobScrapingRunSnapshotSchema>
+export type StartScoringResponse = z.infer<typeof StartScoringResponseSchema>
+export type JobScoringRunSnapshot = z.infer<typeof JobScoringRunSnapshotSchema>

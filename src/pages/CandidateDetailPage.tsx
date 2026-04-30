@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getCandidate } from '@/lib/api/candidates'
 import SkillChips from '@/components/candidates/SkillChips'
@@ -7,11 +7,18 @@ import ScoredJobsTable from '@/components/candidates/ScoredJobsTable'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { JobScoreVisibilityEnum } from '@/lib/api/scores'
 import {
   ArrowLeft, MapPin, Mail, Phone, Briefcase,
   Globe, ChevronDown, ChevronUp, Link,
 } from 'lucide-react'
 import { format } from 'date-fns'
+
+const VISIBILITY_OPTIONS: { label: string; value: JobScoreVisibilityEnum }[] = [
+  { label: 'Visible', value: JobScoreVisibilityEnum.VISIBLE },
+  { label: 'All', value: JobScoreVisibilityEnum.ALL },
+  { label: 'Hidden only', value: JobScoreVisibilityEnum.HIDDEN },
+]
 
 const TABS = ['Profile', 'Skills', 'Scored Jobs'] as const
 type Tab = typeof TABS[number]
@@ -19,8 +26,27 @@ type Tab = typeof TABS[number]
 export default function CandidateDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>('Profile')
   const [cvExpanded, setCvExpanded] = useState(false)
+
+  const rawVisibility = searchParams.get('visibility')
+  const visibility: JobScoreVisibilityEnum =
+    rawVisibility === JobScoreVisibilityEnum.ALL || rawVisibility === JobScoreVisibilityEnum.HIDDEN
+      ? (rawVisibility as JobScoreVisibilityEnum)
+      : JobScoreVisibilityEnum.VISIBLE
+
+  function setVisibility(v: JobScoreVisibilityEnum) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (v === JobScoreVisibilityEnum.VISIBLE) {
+        next.delete('visibility')
+      } else {
+        next.set('visibility', v)
+      }
+      return next
+    })
+  }
 
   const { data: candidate, isLoading, isError } = useQuery({
     queryKey: ['candidate', id],
@@ -208,7 +234,27 @@ export default function CandidateDetailPage() {
       )}
 
       {activeTab === 'Scored Jobs' && (
-        <ScoredJobsTable candidateId={candidate.candidateProfileId} />
+        <div className="space-y-4">
+          {/* Visibility segmented control */}
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5">
+            {VISIBILITY_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setVisibility(opt.value)}
+                className={cn(
+                  'px-4 py-1.5 rounded-md text-sm font-medium transition-colors',
+                  visibility === opt.value
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700',
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <ScoredJobsTable candidateId={candidate.candidateProfileId} visibility={visibility} />
+        </div>
       )}
     </div>
   )

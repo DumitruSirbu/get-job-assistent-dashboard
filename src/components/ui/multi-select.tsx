@@ -10,9 +10,10 @@ interface MultiSelectProps {
   onChange: (ids: number[]) => void
   placeholder: string
   className?: string
+  onSearchChange?: (search: string) => void
 }
 
-export function MultiSelect({ options, value, onChange, placeholder, className }: MultiSelectProps) {
+export function MultiSelect({ options, value, onChange, placeholder, className, onSearchChange }: MultiSelectProps) {
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
 
@@ -53,7 +54,7 @@ export function MultiSelect({ options, value, onChange, placeholder, className }
             <Input
               placeholder="Search…"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); onSearchChange?.(e.target.value) }}
               className="h-8 text-sm"
             />
           </div>

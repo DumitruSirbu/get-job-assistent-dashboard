@@ -1,5 +1,10 @@
 import { apiClient } from './client'
-import { PaginatedJobsSchema, JobDetailSchema, ProcessNewJobsResponseSchema } from '@/lib/schemas'
+import {
+  PaginatedJobsSchema,
+  JobDetailSchema,
+  ProcessNewJobsResponseSchema,
+  JobScrapingRunSnapshotSchema,
+} from '@/lib/schemas'
 import type { GetNewJobsParamsDto } from '@dumitru_sirbu92/get-job-assistant-sdk'
 
 export interface JobFilters {
@@ -47,4 +52,8 @@ export function getJob(id: number) {
 
 export function processNewJobs(params: GetNewJobsParamsDto) {
   return apiClient.post('/job-description/process-new-jobs', params, ProcessNewJobsResponseSchema)
+}
+
+export function getJobScrapingRun(runId: string) {
+  return apiClient.get(`/job-description/runs/${runId}`, JobScrapingRunSnapshotSchema)
 }

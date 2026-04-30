@@ -1,15 +1,18 @@
-import { memo, useState } from 'react'
+import { memo, useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listScoredJobsForCandidate, type ScoreFilters } from '@/lib/api/scores'
+import { listScoredJobsForCandidate, toggleScoreVisibility, JobScoreVisibilityEnum, type ScoreFilters } from '@/lib/api/scores'
 import { getApplicationsForCandidate, createApplication, deleteApplication, updateApplication } from '@/lib/api/applications'
 import { getApplicationStatuses } from '@/lib/api/lookups'
+import { listCompanies } from '@/lib/api/companies'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   ChevronDown, ChevronRight, ChevronLeft, Circle, ExternalLink,
-  MapPin, Building2, Check, X, Trash2,
+  MapPin, Building2, Check, X, Trash2, Ban, Eye, EyeOff,
 } from 'lucide-react'
+import { MultiSelect } from '@/components/ui/multi-select'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 
@@ -23,19 +26,28 @@ const STATUS_STYLES: Record<string, string> = {
 
 interface Props {
   candidateId: number
+  visibility?: JobScoreVisibilityEnum
 }
 
 const PAGE_SIZE = 20
 
-export default function ScoredJobsTable({ candidateId }: Props) {
+export default function ScoredJobsTable({ candidateId, visibility }: Props) {
   const qc = useQueryClient()
   const [filters, setFilters] = useState<ScoreFilters>({ sort: 'score:desc', limit: PAGE_SIZE })
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
-  const [showAppliedOnly, setShowAppliedOnly] = useState(false)
+  const [companySearchRaw, setCompanySearchRaw] = useState('')
+  const [companySearch, setCompanySearch] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setCompanySearch(companySearchRaw), 300)
+    return () => clearTimeout(t)
+  }, [companySearchRaw])
+
+  const effectiveFilters: ScoreFilters = { ...filters, visibility: visibility ?? JobScoreVisibilityEnum.VISIBLE }
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['scores', candidateId, filters],
-    queryFn: () => listScoredJobsForCandidate(candidateId, filters),
+    queryKey: ['scores', candidateId, effectiveFilters],
+    queryFn: () => listScoredJobsForCandidate(candidateId, effectiveFilters),
     enabled: candidateId > 0,
   })
 
@@ -51,20 +63,33 @@ export default function ScoredJobsTable({ candidateId }: Props) {
   })
   const statuses = statusList?.items ?? []
 
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies', companySearch],
+    queryFn: () => listCompanies({ search: companySearch || undefined, limit: 100 }),
+    staleTime: 30_000,
+  })
+  const companyOptions = companiesData?.items ?? []
+
   const applyMutation = useMutation({
     mutationFn: (jobId: number) => createApplication(candidateId, jobId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['applications', candidateId] }),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (applicationId: string) => deleteApplication(candidateId, applicationId),
+    mutationFn: (applicationId: number) => deleteApplication(candidateId, applicationId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['applications', candidateId] }),
   })
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ applicationId, statusName }: { applicationId: string; statusName: string }) =>
+    mutationFn: ({ applicationId, statusName }: { applicationId: number; statusName: string }) =>
       updateApplication(candidateId, applicationId, { statusName }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['applications', candidateId] }),
+  })
+
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: ({ id, hidden }: { id: string; hidden: boolean }) =>
+      toggleScoreVisibility({ id, hidden }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['scores', candidateId] }),
   })
 
   function toggleExpand(id: number) {
@@ -93,36 +118,14 @@ export default function ScoredJobsTable({ candidateId }: Props) {
           className="w-48"
         />
 
-        <div className="flex items-center gap-1.5">
-          <label className="text-xs text-gray-500 whitespace-nowrap">Min score</label>
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            placeholder="0"
-            value={filters.minScore ?? ''}
-            onChange={e => setFilters(f => ({ ...f, minScore: e.target.value ? Number(e.target.value) : undefined, page: 1 }))}
-            className="w-20"
-          />
-        </div>
-
-        <Select
-          value={filters.locationMatch === undefined ? 'all' : String(filters.locationMatch)}
-          onValueChange={v => setFilters(f => ({
-            ...f,
-            locationMatch: v === 'all' ? undefined : v === 'true',
-            page: 1,
-          }))}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Location match" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All locations</SelectItem>
-            <SelectItem value="true">Location match</SelectItem>
-            <SelectItem value="false">Location mismatch</SelectItem>
-          </SelectContent>
-        </Select>
+        <MultiSelect
+          options={companyOptions}
+          value={filters.companyIds ?? []}
+          onChange={ids => setFilters(f => ({ ...f, companyIds: ids.length ? ids : undefined, page: 1 }))}
+          onSearchChange={setCompanySearchRaw}
+          placeholder="Company"
+          className="w-48"
+        />
 
         <Select
           value={filters.sort ?? 'score:desc'}
@@ -139,17 +142,35 @@ export default function ScoredJobsTable({ candidateId }: Props) {
         </Select>
 
         <button
-          onClick={() => setShowAppliedOnly(v => !v)}
+          onClick={() => setFilters(f => ({
+            ...f,
+            noApplication: f.noApplication ? undefined : true,
+            applicationStatusIds: undefined,
+            page: 1,
+          }))}
           className={cn(
             'flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-colors',
-            showAppliedOnly
+            filters.noApplication
               ? 'border-blue-500 bg-blue-50 text-blue-700'
               : 'border-gray-300 bg-white text-gray-600 hover:border-blue-400',
           )}
         >
-          <Check className="h-3.5 w-3.5" />
-          Applied only
+          <Ban className="h-3.5 w-3.5" />
+          No application
         </button>
+
+        <MultiSelect
+          options={statuses.map(s => ({ id: s.applicationStatusId, name: s.statusName }))}
+          value={filters.applicationStatusIds ?? []}
+          onChange={ids => setFilters(f => ({
+            ...f,
+            applicationStatusIds: ids.length ? ids : undefined,
+            noApplication: undefined,
+            page: 1,
+          }))}
+          placeholder="Status filter"
+          className="w-40"
+        />
 
         <div className="flex items-center gap-1.5">
           <label className="text-xs text-gray-500 whitespace-nowrap">Scored from</label>
@@ -188,14 +209,21 @@ export default function ScoredJobsTable({ candidateId }: Props) {
       <div className="space-y-2">
         {data?.items
           .filter(item => item.job != null)
-          .filter(item => !showAppliedOnly || getApplication(item.job!.jobDescriptionId) != null)
           .map(item => {
           const job = item.job!
           const isOpen = expanded.has(item.jobMatchScoreId)
           const application = getApplication(job.jobDescriptionId)
 
+          const isHidden = item.hidden ?? false
+
           return (
-            <div key={item.jobMatchScoreId} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div
+              key={item.jobMatchScoreId}
+              className={cn(
+                'rounded-lg border overflow-hidden',
+                isHidden ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200',
+              )}
+            >
               {/* Row */}
               <div
                 className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50"
@@ -211,7 +239,12 @@ export default function ScoredJobsTable({ candidateId }: Props) {
 
                 {/* Job info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate text-sm">{job.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className={cn('font-medium truncate text-sm', isHidden ? 'text-gray-400' : 'text-gray-900')}>{job.title}</p>
+                    {isHidden && (
+                      <Badge variant="secondary" className="shrink-0 text-xs">Hidden</Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
                     <span className="flex items-center gap-1 capitalize">
                       <Building2 className="h-3 w-3 shrink-0" />
@@ -231,7 +264,6 @@ export default function ScoredJobsTable({ candidateId }: Props) {
                 {item.reasons && (
                   <div className="hidden sm:flex items-center gap-2 shrink-0">
                     <MatchFlag ok={item.reasons.seniorityMatch} label="Seniority" />
-                    <MatchFlag ok={item.reasons.locationMatch} label="Location" />
                     <span className="text-xs text-gray-400">
                       {item.reasons.matchedSkills.length} matched
                     </span>
@@ -245,6 +277,27 @@ export default function ScoredJobsTable({ candidateId }: Props) {
 
                 {/* Status selector + actions */}
                 <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                  {/* Hide / unhide toggle */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={cn(
+                      'h-7 w-7 p-0',
+                      isHidden ? 'text-gray-400 hover:text-gray-700' : 'text-gray-400 hover:text-gray-700',
+                    )}
+                    title={isHidden ? 'Unhide job' : 'Hide job'}
+                    onClick={() => toggleVisibilityMutation.mutate({
+                      id: String(item.jobMatchScoreId),
+                      hidden: !isHidden,
+                    })}
+                    disabled={toggleVisibilityMutation.isPending}
+                  >
+                    {isHidden
+                      ? <Eye className="h-3.5 w-3.5" />
+                      : <EyeOff className="h-3.5 w-3.5" />
+                    }
+                  </Button>
+
                   <a href={job.jobUrl} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 p-1">
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>

@@ -4,14 +4,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { listJobs, type JobFilters } from '@/lib/api/jobs'
 import JobFiltersPanel from '@/components/jobs/JobFilters'
 import GetNewJobsForm from '@/components/jobs/GetNewJobsForm'
+import { JobScrapingRunView } from '@/pages/JobScrapingPage'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, ExternalLink, MapPin, Building2, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import type { JobListItem } from '@/lib/schemas'
+import type { JobListItem, ProcessNewJobsResponse } from '@/lib/schemas'
 
-const TABS = ['Jobs', 'Get New Jobs'] as const
+const TABS = ['Jobs', 'Get New Jobs', 'Scraping'] as const
 type Tab = typeof TABS[number]
 
 const PAGE_SIZE = 20
@@ -44,11 +45,32 @@ function filtersToParams(f: JobFilters): URLSearchParams {
 export default function JobsListPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState<Tab>('Jobs')
+  const scrapingRunId = searchParams.get('scrapingRunId') ?? null
+  const [activeTab, setActiveTab] = useState<Tab>(() =>
+    searchParams.get('scrapingRunId') ? 'Scraping' : 'Jobs'
+  )
+
+  function handleTabClick(tab: Tab) {
+    if (tab !== 'Scraping') {
+      setSearchParams(p => { p.delete('scrapingRunId'); return p }, { replace: true })
+    }
+    setActiveTab(tab)
+  }
+
+  function handleScrapingStarted(data: ProcessNewJobsResponse) {
+    setSearchParams(p => { p.set('scrapingRunId', data.runId); return p }, { replace: true })
+    setActiveTab('Scraping')
+  }
+
   const filters = filtersFromParams(searchParams)
 
   function setFilters(f: JobFilters) {
-    setSearchParams(filtersToParams(f))
+    setSearchParams(p => {
+      const next = filtersToParams(f)
+      const runId = p.get('scrapingRunId')
+      if (runId) next.set('scrapingRunId', runId)
+      return next
+    })
   }
 
   const { data, isLoading, isError } = useQuery({
@@ -69,7 +91,7 @@ export default function JobsListPage() {
         {TABS.map(tab => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabClick(tab)}
             className={cn(
               'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
               activeTab === tab
@@ -144,7 +166,29 @@ export default function JobsListPage() {
       )}
 
       {activeTab === 'Get New Jobs' && (
-        <GetNewJobsForm />
+        <GetNewJobsForm onSuccess={handleScrapingStarted} />
+      )}
+
+      {activeTab === 'Scraping' && (
+        scrapingRunId ? (
+          <JobScrapingRunView
+            key={scrapingRunId}
+            runId={scrapingRunId}
+            onRetry={() => {
+              setSearchParams(p => { p.delete('scrapingRunId'); return p }, { replace: true })
+              setActiveTab('Jobs')
+            }}
+            className="p-0"
+          />
+        ) : (
+          <div className="py-12 text-center text-sm text-gray-400">
+            No active scraping run. Submit the{' '}
+            <button className="text-blue-600 hover:underline" onClick={() => handleTabClick('Get New Jobs')}>
+              Get New Jobs
+            </button>{' '}
+            form to start one.
+          </div>
+        )
       )}
     </div>
   )

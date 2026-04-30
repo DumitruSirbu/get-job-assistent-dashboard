@@ -3,7 +3,8 @@ import { Briefcase, Users, Building2, Settings, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api/auth'
 import { tokenStore } from '@/lib/auth/tokenStore'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { refreshTokens } from '@/lib/api/client'
 
 const navItems = [
   { to: '/jobs', label: 'Jobs', icon: Briefcase },
@@ -14,13 +15,25 @@ const navItems = [
 
 export default function AppShell() {
   const navigate = useNavigate()
+  const [authReady, setAuthReady] = useState(false)
 
-  // Auth guard: if no tokens, redirect to login
   useEffect(() => {
-    if (!tokenStore.isAuthenticated()) {
-      navigate('/login', { replace: true })
+    async function init() {
+      if (!tokenStore.getAccess() && tokenStore.getRefresh()) {
+        await refreshTokens()
+      }
+
+      if (!tokenStore.isAuthenticated()) {
+        navigate('/login', { replace: true })
+      }
+
+      setAuthReady(true)
     }
+    
+    init()
   }, [navigate])
+
+  if (!authReady) return null
 
   function handleLogout() {
     logout()

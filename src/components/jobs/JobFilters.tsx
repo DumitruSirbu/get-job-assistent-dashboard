@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getCompanies, getLocations } from '@/lib/api/lookups'
+import { getLocations } from '@/lib/api/lookups'
+import { listCompanies } from '@/lib/api/companies'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -13,7 +15,20 @@ interface Props {
 }
 
 export default function JobFilters({ filters, onChange }: Props) {
-  const { data: companies } = useQuery({ queryKey: ['companies'], queryFn: getCompanies })
+  const [companySearchRaw, setCompanySearchRaw] = useState('')
+  const [companySearch, setCompanySearch] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setCompanySearch(companySearchRaw), 300)
+    return () => clearTimeout(t)
+  }, [companySearchRaw])
+
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies', companySearch],
+    queryFn: () => listCompanies({ search: companySearch || undefined, limit: 100 }),
+    staleTime: 30_000,
+  })
+  const companies = { items: companiesData?.items ?? [] }
   const { data: locations } = useQuery({ queryKey: ['locations'], queryFn: getLocations })
 
   const hasFilters =
@@ -35,9 +50,10 @@ export default function JobFilters({ filters, onChange }: Props) {
 
       {/* Company multi-select */}
       <MultiSelect
-        options={companies?.items ?? []}
+        options={companies.items}
         value={filters.companyId ?? []}
         onChange={ids => onChange({ ...filters, companyId: ids, page: 1 })}
+        onSearchChange={setCompanySearchRaw}
         placeholder="Company"
       />
 
