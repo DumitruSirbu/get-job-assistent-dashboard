@@ -1,194 +1,81 @@
-# Get Job Assistant Dashboard
+# CLAUDE.md
 
-A React dashboard for job searching, candidate management, and application tracking. It talks to a private REST API and uses an internal SDK for job-fetch queue parameters.
+A React dashboard for job searching, candidate management, and application tracking. Talks to a private REST API using an internal SDK for type-safe contracts. See [README.md](./README.md) for setup.
 
-## Tech Stack
+## Stack
 
-| Layer | Choice |
+| Layer | Technology |
 |---|---|
 | Framework | React 19, TypeScript 5.8, Vite 6 |
 | Routing | React Router DOM 7 |
 | Server state | TanStack React Query 5 |
-| Styling | TailwindCSS 4 (Vite plugin), CSS variables |
-| UI primitives | Radix UI (dialog, popover, select, tabs, …) + lucide-react icons |
+| Styling | TailwindCSS 4, CSS variables |
+| UI primitives | Radix UI + lucide-react icons |
 | Validation | Zod 4 |
-| Component variants | class-variance-authority + clsx + tailwind-merge (`cn()`) |
-| SDK | `@dumitru_sirbu92/get-job-assistant-sdk` — enums + DTOs for the job-fetch queue |
+| SDK | `@dumitrusirbu92/get-job-assistant-sdk` |
 
 ## Dev Commands
 
 ```bash
-npm run dev       # dev server on port 3001
+npm run dev       # Vite dev server on port 3001
 npm run build     # tsc -b && vite build
-npm run lint      # eslint
-npm run preview   # preview production build
+npm run lint      # ESLint
+npm run preview   # Preview production build
 ```
 
 ## Environment Variables
 
 ```
-VITE_API_BASE_URL=   # empty → same-origin; set to full URL (e.g. http://localhost:3000) for real backend
+VITE_API_BASE_URL=   # empty → same-origin; set to full URL (e.g. http://localhost:3000) for backend
 ```
 
-## Project Structure
+## Folder Layout
 
 ```
 src/
-├── main.tsx                    # entry: reflect-metadata, QueryClient, Router
-├── routes.tsx                  # all route definitions
+├── main.tsx               # entry: reflect-metadata, QueryClient, Router
+├── routes.tsx             # route definitions
 ├── lib/
-│   ├── api/
-│   │   ├── client.ts           # fetch-based HTTP client with Zod validation + token refresh
-│   │   ├── auth.ts             # login, register, logout (direct fetch, not apiClient)
-│   │   ├── jobs.ts             # listJobs, getJob, processNewJobs
-│   │   ├── candidates.ts       # listCandidates, getCandidate
-│   │   ├── companies.ts        # listCompanies, blacklistCompany, unblacklistCompany
-│   │   ├── scores.ts           # listScoredJobsForCandidate
-│   │   ├── applications.ts     # getApplicationsForCandidate, createApplication, updateApplication, deleteApplication
-│   │   └── lookups.ts          # getJobRegions, createRegion, updateRegion, deleteRegion + read-only lookup helpers
-│   ├── auth/
-│   │   └── tokenStore.ts       # access token: in-memory; refresh token: sessionStorage (key: gja_refresh_token)
-│   ├── schemas/
-│   │   └── index.ts            # all Zod schemas and inferred TypeScript types
-│   └── utils.ts                # cn() helper
+│   ├── api/              # HTTP clients: client.ts, auth.ts, jobs.ts, candidates.ts, scores.ts, etc.
+│   ├── auth/             # tokenStore.ts (access in-memory, refresh in sessionStorage)
+│   ├── schemas/          # All Zod schemas + inferred types
+│   └── utils.ts          # cn() helper
 ├── components/
-│   ├── layout/AppShell.tsx     # sidebar nav + auth guard
-│   ├── ui/                     # badge, button, card, dialog, input, select, multi-select
-│   ├── jobs/                   # JobFilters, GetNewJobsForm
-│   └── candidates/             # SkillChips, ScoredJobsTable
+│   ├── layout/           # AppShell (nav + auth guard)
+│   ├── ui/               # Button, Badge, Dialog, Input, MultiSelect, etc.
+│   ├── jobs/             # JobFilters, GetNewJobsForm
+│   └── candidates/       # SkillChips, ScoredJobsTable
 └── pages/
     ├── LoginPage.tsx
-    ├── JobsListPage.tsx        # tabs: Jobs list + Get New Jobs form
-    ├── JobDetailPage.tsx
+    ├── JobsListPage.tsx
     ├── CandidatesListPage.tsx
-    ├── CandidateDetailPage.tsx # tabs: Profile, Skills, Scored Jobs
-    ├── CompaniesPage.tsx       # CRUD: blacklist/unblacklist
+    ├── CandidateDetailPage.tsx (tabs: Profile, Skills, Scored Jobs)
+    ├── CompaniesPage.tsx
     └── settings/
-        ├── SettingsLayout.tsx  # inner tab nav + <Outlet>
-        └── RegionsPage.tsx     # full CRUD for job regions
+        ├── SettingsLayout.tsx
+        └── RegionsPage.tsx
 ```
 
-## Routes
+## Where to look for…
 
-| Path | Component | Notes |
-|---|---|---|
-| `/login` | LoginPage | public |
-| `/` | — | redirects to `/jobs` |
-| `/jobs` | JobsListPage | |
-| `/jobs/:id` | JobDetailPage | |
-| `/candidates` | CandidatesListPage | |
-| `/candidates/:id` | CandidateDetailPage | |
-| `/companies` | CompaniesPage | |
-| `/settings` | SettingsLayout | redirects to `/settings/regions` |
-| `/settings/regions` | RegionsPage | |
-| `*` | — | redirects to `/jobs` |
+- **Routes, state management, API client** → [docs/architecture.md](./docs/architecture.md)
+- **Component patterns, Zod schemas, TanStack Query** → [docs/conventions.md](./docs/conventions.md)
+- **Frontend checklists for backend features** → [docs/integration-tasks.md](./docs/integration-tasks.md)
+- **Agents + rules** → [docs/agents-and-rules.md](./docs/agents-and-rules.md)
 
-## API Client
+## Hard Rules
 
-All requests go through `apiClient` in `src/lib/api/client.ts`:
+1. **All requests via apiClient** — `src/lib/api/client.ts` handles auth tokens + Zod validation
+2. **Zod schemas validate all API responses** — add schemas to `src/lib/schemas/index.ts` before using a response
+3. **URL search params for filter state** — use `useSearchParams` to persist filters across navigation
+4. **TanStack Query for server state** — use `useQuery` for fetches, `useMutation` for mutations
+5. **Invalidate, don't refetch manually** — use `qc.invalidateQueries()` after mutations
+6. **Tokens: access in-memory, refresh in sessionStorage** — tokenStore handles this
+7. **UI state with useState, server state with React Query** — don't mix them
+8. **Entity naming matches API** — use `jobDescriptionId` not `id`; transform if API uses different names
+9. **cn() for Tailwind composition** — never concatenate class strings
+10. **Add page → add route → add nav item** — always do all three
 
-```ts
-apiClient.get(path, ZodSchema)
-apiClient.post(path, body, ZodSchema)
-apiClient.put(path, body, ZodSchema)
-apiClient.patch(path, body, ZodSchema)
-apiClient.delete(path)          // returns void
-```
+## Context7 Reminder
 
-- Every response is validated against a Zod schema; throws on failure
-- Adds `Authorization: Bearer <accessToken>` when a token is present
-- On 401: attempts token refresh via `POST /user/refresh { refreshToken }`, retries once; on failure clears tokens and calls the unauthorised handler (which redirects to `/login`)
-- Empty response bodies return `undefined` without error
-
-## Authentication
-
-- `login()` / `register()` → store tokens with `tokenStore.setTokens(access, refresh)`
-- Access token is in-memory only (lost on page close)
-- Refresh token is in `sessionStorage` (survives tab reloads)
-- `AppShell` has a `useEffect` auth guard that redirects to `/login` if not authenticated
-- `logout()` clears both tokens locally (no API call)
-
-## Schemas & Naming Conventions
-
-Entity field naming mirrors the API (not generic `id`):
-
-| Entity | ID field | Name field |
-|---|---|---|
-| Job region | `jobRegionId` | `name` |
-| Location | `locationId` | `countryName` |
-| Company | `companyId` | `companyName` |
-| Sector | `sectorId` | `sectorName` |
-| Experience level | `experienceLevelId` | `experienceLevelName` |
-| Contract type | `contractTypeId` | `contractTypeName` |
-
-`RegionSchema` uses a Zod `.transform()` to map `jobRegionId → id` so all UI components (especially `MultiSelect`) receive `{ id, name }` — do the same for any new lookup with a non-`id` primary key.
-
-`LookupListSchema` (`{ items: { id, name }[] }`) is used for read-only dropdown lists where the API genuinely returns `id` and `name`. Do not use it for entities that use `entityId` naming.
-
-## State Management Patterns
-
-- **Server state**: React Query (`useQuery` / `useMutation`)
-- **Filter/pagination state**: URL search params via `useSearchParams` — persists across navigation
-- **UI state**: `useState` (modals, tabs, expanded rows)
-- **Auth tokens**: `tokenStore` module
-
-### Query key conventions
-```ts
-['jobs', filters]          // list queries include filter object
-['job', id]                // detail queries
-['regions']                // settings page
-['job-regions']            // GetNewJobsForm regions picker
-```
-
-### Mutation pattern (follow this everywhere)
-```ts
-const qc = useQueryClient()
-const mutation = useMutation({
-  mutationFn: apiCall,
-  onSuccess: () => qc.invalidateQueries({ queryKey: ['resource'] }),
-})
-```
-
-For immediate UI updates without waiting for refetch, use `setQueryData` before `invalidateQueries`.
-
-## UI Component Conventions
-
-- `Button`: variants `default | destructive | outline | secondary | ghost | link`; sizes `default | sm | lg | icon`
-- `Badge`: variants `default | secondary | destructive | success | warning | outline`
-- `MultiSelect`: accepts `{ id: number; name: string }[]` — use for any multi-value picker
-- `Dialog`: use for create/edit forms; controlled via `open` + `onOpenChange`
-- All components use `cn()` for class composition and `React.forwardRef` where they accept a ref
-- Icons from `lucide-react`, standard sizes: `h-4 w-4` (nav/buttons), `h-3.5 w-3.5` (inline in sm buttons)
-
-## GetNewJobsForm & SDK
-
-The form uses enums from `@dumitru_sirbu92/get-job-assistant-sdk`:
-
-- `ContractTypeEnum`, `ExperienceLevelEnum`, `PublishedAtEnum`, `WorkTypeEnum`
-- Submits `GetNewJobsParamsDto` with `jobRegionIds: number[]` (not location strings)
-- Regions with `isSelectedByDefault: true` are pre-selected via `useEffect` on load
-- `reflect-metadata` must be imported before the SDK (done in `main.tsx`)
-
-## Job Regions
-
-Regions are stored in the `job_region` Postgres table (`jobRegionId`, `name`, `isSelectedByDefault`).
-
-- `GET /job-region` → list (currently does not return `isSelectedByDefault`; schema defaults to `false` via `.catch(false)`)
-- `POST /job-region` → create `{ name, isSelectedByDefault }`
-- `PUT /job-region/:id` → full update (not PATCH)
-- `DELETE /job-region/:id` → delete
-- Managed in Settings → Regions; also used as the multi-select in the Get New Jobs form
-
-## Adding a New Page
-
-1. Create `src/pages/MyPage.tsx`
-2. Add route in `src/routes.tsx` inside the `<AppShell>` route group
-3. Add nav item in `src/components/layout/AppShell.tsx` `navItems` array
-4. Add API functions in the appropriate `src/lib/api/` module
-5. Add Zod schemas + types in `src/lib/schemas/index.ts`
-
-## Adding a New Settings Section
-
-1. Create `src/pages/settings/MySection.tsx`
-2. Add `<Route path="my-section" element={<MySection />} />` inside the `/settings` route group in `routes.tsx`
-3. Add a nav entry to the `settingsNav` array in `src/pages/settings/SettingsLayout.tsx`
+See `~/.claude/rules/context7.md` — use Context7 MCP to fetch docs for React, TanStack Query, Zod, Tailwind, etc.
